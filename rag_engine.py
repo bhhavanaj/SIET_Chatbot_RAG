@@ -8,7 +8,9 @@ from sentence_transformers import SentenceTransformer
 
 def load_pdf(pdf_path):
     reader = PdfReader(str(pdf_path))
+
     mypages = [page.extract_text() or "" for page in reader.pages]
+
     full_text = "\n".join(mypages).strip()
 
     if not full_text:
@@ -37,6 +39,7 @@ def create_chunks(full_text, chunksize=500, overlap=100):
 
 
 def build_vectors(chunks, model_name="all-MiniLM-L6-v2"):
+
     if not chunks:
         raise ValueError("Cannot apply embeddings without chunks")
 
@@ -52,12 +55,14 @@ def build_vectors(chunks, model_name="all-MiniLM-L6-v2"):
     faiss.normalize_L2(embed_vectors)
 
     index = faiss.IndexFlatIP(embed_vectors.shape[1])
+
     index.add(embed_vectors)
 
     return index, embed_model
 
 
 def load_base(pdf_path):
+
     full_text = load_pdf(pdf_path)
 
     chunks = create_chunks(full_text)
@@ -74,11 +79,15 @@ def retrieve_content(
     index,
     num_chunks=3
 ):
+
     if not question.strip():
         raise ValueError("Question cannot be blank")
 
     if num_chunks < 1:
         raise ValueError("Request at least one chunk")
+
+    if index.ntotal == 0:
+        return ""
 
     query_embed = embed_model.encode(
         [question],
@@ -110,8 +119,9 @@ def ask_rag(
     index,
     api_key,
     num_chunks=3,
-    model_name="llama-3.3-70b-versatile"
+    model_name="openai/gpt-oss-120b"
 ):
+
     key = api_key
 
     if not key:
@@ -125,12 +135,19 @@ def ask_rag(
         num_chunks
     )
 
+    if not background.strip():
+        return "Information Missing"
+
     prompt = f"""
 You are a professional AI Assistant.
 
-Answer the user's question using ONLY the document background below.
+Answer the user's question using ONLY
+the document background below.
+
 Do not invent or assume facts.
-If information is not available, simply say "Information Missing".
+
+If information is not available,
+simply say "Information Missing".
 
 Document Background:
 {background}
