@@ -4,7 +4,7 @@ from groq import Groq
 from pypdf import PDFReader
 from sentence_transformers import  SentenceTransformer
 def load_pdf (pdf_path):
-  reader = PDFReader(str(pdf_path))
+  reader = PdfReader(str(pdf_path))
   mypages = [ i.extract_text() or ""  for i in reader.pages]
   full_text = "\n" . join(mypages).strip()
   if not dull_text:'
@@ -32,9 +32,9 @@ def build_vectors ( chunks, model_name = "all-MinLM-L6-V2"):
 def load_base (pdf_path+ "01_College_Information.pdf"):
   full_text = load_pdf(pdf_path)
   chunks = create_chunks(full_text)
-  embed_model, index = build_vectors(chunks)
-  return embed_model, chunks, index
-def  retrieve_content (question, embed_model, chunks, index, rum_chunks=3):
+index,embed_model = build_vectors(chunks)
+  return index,embed_model, chunks
+def retrieve_content (question, embed_model, chunks, index, rum_chunks=3):
   if not question.strip():
     raise valueError("Question cannot be blank")
   if num_chunks < 1:
@@ -44,10 +44,11 @@ def  retrieve_content (question, embed_model, chunks, index, rum_chunks=3):
   sim_scores, vec_indices = index.search(query_embed, min(num_chunks, len(chunks))) 
   background = ""
   for i in vec_indices[0]:
+    if != -1:
     background += chunks[i] + "\n\n"
-  return background 
-def ask_rag (question, embed_model, chunks, index, api_key, num_chunks, model_name = "openai/gpt
-  key = api_key
+    return background 
+    def ask_rag (question, embed_model, chunks, index, api_key, num_chunks, model_name = "openai/gpt
+    key = api_key
   if not key:
     raise valueError("API key Missing")
   background = retrieve_content(question, embed_model, chunks, index, num_chunks=
